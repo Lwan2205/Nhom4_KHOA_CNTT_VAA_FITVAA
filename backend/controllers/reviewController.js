@@ -3,25 +3,19 @@ const Product = require('../../backend/model/product');
 
 // Thêm đánh giá mới
 const addReview = async (req, res) => {
-    const { productId, rating, comment } = req.body;
+    const { username, email, address, feedBack } = req.body;
 
-    if (!productId || !rating) {
-        return res.status(400).json({ message: 'Product ID and rating are required' });
-    }
+
 
     try {
-        // Kiểm tra xem sản phẩm có tồn tại không
-        const product = await Product.findById(productId);
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
+
 
         // Tạo đánh giá mới
         const review = new Review({
-            productId,
-            userId: req.user._id, // Người dùng đã đăng nhập
-            rating,
-            comment
+            username,
+            email,
+            address,
+            feedBack // Người dùng đã đăng nhập  
         });
 
         const createdReview = await review.save();

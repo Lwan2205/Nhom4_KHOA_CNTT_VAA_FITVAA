@@ -5,7 +5,7 @@ const Footer = () => {
         <footer style={{ backgroundColor: '#eaf5f7', padding: '20px', textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
             {/* Thông tin liên hệ */}
             <div>
-                <h4>Nhà Thuốc Long Quân</h4>
+                {/* <h4>Nhà Thuốc Long Quân</h4> */}
                 <p>Địa chỉ: Số 1 - Phạm Viết Chánh - Bình Thạnh -  Hồ Chí Minh</p>
                 <p>Điện thoại: 0834588827</p>
                 <p>Email: <a href="mailto:lonqquan22052004@gmail.com">lonqquan22052004@gmail.com</a></p>

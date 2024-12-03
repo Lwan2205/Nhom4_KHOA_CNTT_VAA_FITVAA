@@ -36,7 +36,7 @@ const FavoriteBrands = () => {
     return (
         <div className="favorite-brands-section">
             <h2 className="section-title">
-                <span className="icon">✔️</span> Thương hiệu yêu thích
+                <span className="icon">✔️</span> Style yêu thích
             </h2>
             <div className="brand-grid">
                 {brands.map((brand) => (

@@ -83,8 +83,8 @@ const createOrderFromCart = async (req, res, next) => {
         // Lấy giỏ hàng của người dùng
         const cart = await Cart.findOne({ userId: req.user._id }).populate({
             path: 'products.productId',
-            select: 'price manufacturer discount',
-            populate: { path: 'discount', select: 'discountPercent' }
+            select: 'price manufacturer discount variants',
+            populate: { path: 'discount', select: 'discountPercent' },
         });
 
         if (!cart || cart.products.length === 0) {
@@ -92,25 +92,32 @@ const createOrderFromCart = async (req, res, next) => {
         }
 
         // Tính tổng giá trị đơn hàng
-        let totalAmount = Math.round(cart.products.reduce((sum, item) => {
-            const discount = item.productId.discount ? item.productId.discount.discountPercent : 0;
-            const priceAfterDiscount = item.productId.price * (1 - discount / 100);
-            return sum + (priceAfterDiscount * item.quantity);
-        }, 0));
+        let totalAmount = Math.round(
+            cart.products.reduce((sum, item) => {
+                const discount = item.productId.discount ? item.productId.discount.discountPercent : 0;
+                const priceAfterDiscount = item.productId.price * (1 - discount / 100);
+                return sum + priceAfterDiscount * item.quantity;
+            }, 0)
+        );
 
         if (totalAmount % 2 !== 0) {
-            totalAmount -= 1;
+            totalAmount -= 1; // Đảm bảo tổng tiền là một số chẵn
         }
 
-        const productDetails = cart.products.map(item => {
+        const productDetails = cart.products.map((item) => {
             const discount = item.productId.discount ? item.productId.discount.discountPercent : 0;
             const priceAfterDiscount = item.productId.price * (1 - discount / 100);
+            const variantId = item.productId.variants.find(variant => variant.size === item.size)?._id;
+            console.log(variantId)
+
             return {
                 productId: item.productId._id,
+                variantId: variantId,  // Thêm variantId vào thông tin sản phẩm
                 quantity: item.quantity,
+                size: item.size,
                 price: item.productId.price,
                 discount,
-                priceAfterDiscount
+                priceAfterDiscount,
             };
         });
 
@@ -127,6 +134,29 @@ const createOrderFromCart = async (req, res, next) => {
         const order = new Order(orderData);
         const createdOrder = await order.save();
 
+        // Cập nhật kho sản phẩm
+        const updateStock = cart.products.map(async (item) => {
+            const productId = item.productId._id;
+            const variants = item.productId.variants;
+
+            if (Array.isArray(variants) && variants.length > 0) {
+                const productVariant = variants.find(variant => variant.size === item.size);
+
+                if (productVariant) {
+                    // Giảm số lượng tồn kho cho sản phẩm này
+                    productVariant.stock -= item.quantity;
+                    await Product.findByIdAndUpdate(productId, {
+                        $set: { 'variants.$[elem].stock': productVariant.stock },
+                    }, {
+                        arrayFilters: [{ 'elem.size': item.size }],
+                        new: true,
+                    });
+                }
+            }
+        });
+
+        await Promise.all(updateStock);
+
         // Nếu thanh toán qua VNPay
         if (req.body.paymentMethod === 'VNPay') {
             let config = require('config');
@@ -135,7 +165,7 @@ const createOrderFromCart = async (req, res, next) => {
             let vnpUrl = config.get('vnp_Url');
             let returnUrl = config.get('vnp_ReturnUrl');
 
-            const orderId = createdOrder._id.toString(); // Sử dụng ID đơn hàng
+            const orderId = createdOrder._id.toString();
             let date = new Date();
             let ipAddr = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress;
 
@@ -149,15 +179,15 @@ const createOrderFromCart = async (req, res, next) => {
             vnp_Params['vnp_OrderInfo'] = 'Thanh toán VNPay';
             vnp_Params['vnp_OrderType'] = 'billpayment';
             vnp_Params['vnp_Locale'] = 'vn';
-            vnp_Params['vnp_ReturnUrl'] = returnUrl; // URL callback
+            vnp_Params['vnp_ReturnUrl'] = returnUrl;
             vnp_Params['vnp_IpAddr'] = ipAddr;
             vnp_Params['vnp_CreateDate'] = moment(date).format('YYYYMMDDHHmmss');
 
             // Tạo chữ ký bảo mật
             vnp_Params = sortObject(vnp_Params);
             let signData = querystring.stringify(vnp_Params, { encode: false });
-            let hmac = crypto.createHmac("sha512", secretKey);
-            let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");
+            let hmac = crypto.createHmac('sha512', secretKey);
+            let signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
             vnp_Params['vnp_SecureHash'] = signed;
             vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
 
@@ -165,12 +195,12 @@ const createOrderFromCart = async (req, res, next) => {
             return res.status(200).json({ payUrl: vnpUrl, orderId: createdOrder._id });
         }
 
-        // Nếu không phải VNPay, xử lý bình thường
-        const updateManufacturers = cart.products.map(async item => {
+        // Cập nhật thông tin nhà sản xuất
+        const updateManufacturers = cart.products.map(async (item) => {
             const manufacturerId = item.productId.manufacturer;
             if (manufacturerId) {
                 return Manufacturer.findByIdAndUpdate(manufacturerId, {
-                    $inc: { salesCount: item.quantity }
+                    $inc: { salesCount: item.quantity },
                 });
             }
         });
@@ -181,17 +211,14 @@ const createOrderFromCart = async (req, res, next) => {
         await cart.save();
 
         res.status(201).json({ data: createdOrder, success: true });
-
     } catch (error) {
-        if (!res.headersSent) {
-            res.status(500).json({ message: error.message });
-        } else {
-            console.error('Lỗi sau khi phản hồi đã gửi:', error);
-        }
+        res.status(500).json({ message: error.message });
     }
-
-
 };
+
+
+
+
 const getUserOrders = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
@@ -248,31 +275,37 @@ const updateOrderStatus = async (req, res) => {
         // Cập nhật trạng thái đơn hàng
         order.status = status;
 
-        // Nếu trạng thái là Delivered, cập nhật trạng thái thanh toán và trừ stock
-        if (status === 'Delivered') {
-            if (order.paymentMethod === 'Online Payment') {
-                order.paymentStatus = 'Completed';
-                order.paymentDate = new Date();
-            }
-
-            // Trừ stock cho từng sản phẩm trong đơn hàng
+        // Nếu trạng thái là Cancelled, khôi phục lại số lượng sản phẩm trong kho
+        if (status === 'Canceled') {
+            // Khôi phục lại số lượng stock cho từng sản phẩm trong đơn hàng
             for (const item of order.products) {
                 const product = item.productId;
-                if (product && product.stock >= item.quantity) {  // Kiểm tra tồn kho trước khi trừ
-                    product.stock -= item.quantity;
-                    await product.save();
-                } else {
-                    return res.status(400).json({ message: `Insufficient stock for product ${product.name}` });
+                if (product) {
+                    const variant = product.variants.find(variant => variant._id.toString() === item.variantId.toString());
+                    console.log(variant)
+                    if (variant) {
+                        variant.stock += item.quantity;  // Khôi phục số lượng
+                        await product.updateOne({
+                            $set: { 'variants.$[elem].stock': variant.stock }
+                        }, {
+                            arrayFilters: [{ 'elem._id': item.variantId }],
+                            new: true
+                        });
+                    }
                 }
             }
         }
 
+        // Cập nhật đơn hàng với trạng thái mới
         const updatedOrder = await order.save();
         res.status(200).json(updatedOrder);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
+
+
 
 
 // Xóa đơn hàng theo ID

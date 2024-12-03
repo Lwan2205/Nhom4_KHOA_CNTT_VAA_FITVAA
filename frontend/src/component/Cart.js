@@ -26,7 +26,10 @@ const Cart = () => {
     const { fetchUserAddToCart } = useContext(Context)
 
 
+
+
     useEffect(() => {
+
         const fetchCartItems = async () => {
             try {
                 const response = await fetch(SummaryApi.Cart.url, {
@@ -78,7 +81,7 @@ const Cart = () => {
         setCartItems(updatedItems);
     };
 
-    const handleQuantityChange = (itemId, productId, newQuantity) => {
+    const handleQuantityChange = (itemId, productId, size, newQuantity) => {
         if (newQuantity < 1) return;
 
         const updatedItems = cartItems.map(item => {
@@ -89,14 +92,14 @@ const Cart = () => {
         });
         setCartItems(updatedItems);
         calculateTotal(updatedItems);
-        updateCartItemQuantity(productId, newQuantity);
+        updateCartItemQuantity(productId, size, newQuantity); // Thêm size vào đây
     };
 
-    const handleRemoveItem = (productId) => {
-        const updatedItems = cartItems.filter(item => item.productId._id !== productId);
+    const handleRemoveItem = (productId, size) => {
+        const updatedItems = cartItems.filter(item => item.productId._id !== productId || item.size !== size);
         setCartItems(updatedItems);
         calculateTotal(updatedItems);
-        removeItemFromCart(productId);
+        removeItemFromCart(productId, size); // Chuyển thêm size
     };
 
     const handleClearCart = async () => {
@@ -131,19 +134,19 @@ const Cart = () => {
         });
     };
 
-    const updateCartItemQuantity = async (productId, quantity) => {
+    const updateCartItemQuantity = async (productId, size, quantity) => {
         try {
             const response = await fetch(SummaryApi.cart_update.url, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ productId, quantity }),
-                credentials: 'include'
+                body: JSON.stringify({ productId, size, quantity }), // Thêm size vào body
+                credentials: 'include',
             });
             const data = await response.json();
             if (!data.success) {
-                fetchUserAddToCart()
+                fetchUserAddToCart();
                 toast.error(data.message);
             }
         } catch (error) {
@@ -152,15 +155,15 @@ const Cart = () => {
         }
     };
 
-    const removeItemFromCart = async (productId) => {
+    const removeItemFromCart = async (productId, size) => {
         try {
-            const response = await fetch(SummaryApi.cart_delete(productId).url, {
+            const response = await fetch(SummaryApi.cart_delete(productId, size).url, {
                 method: 'DELETE',
                 credentials: 'include'
             });
             const data = await response.json();
             if (!data.success) {
-                fetchUserAddToCart()
+                fetchUserAddToCart();
                 toast.error(data.message);
             }
         } catch (error) {
@@ -168,6 +171,7 @@ const Cart = () => {
             toast.error('Failed to remove item from cart');
         }
     };
+
 
 
     return (
@@ -242,47 +246,46 @@ const Cart = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {
-                                    cartItems.map((item) => (
-                                        <TableRow key={item._id}>
-                                            <TableCell component="th" scope="row" sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                                <Box sx={{ border: '1px solid #ccc', borderRadius: '12px', padding: '5px 10px' }}>
-                                                    <img
-                                                        src={`http://localhost:8000${item.productId?.images}`}
-
-
-                                                        alt={item.productId?.name || 'Product'}
-                                                        className="cart-item-image"
-                                                    />
-                                                </Box>
-                                                <p>{item.productId?.name || 'Tên sản phẩm'}</p>
-                                            </TableCell>
-                                            <TableCell align="center">{item.productId?.price}</TableCell>
-                                            <TableCell align="center">
-                                                <div className="quantity-control">
-                                                    <button
-                                                        onClick={() => handleQuantityChange(item._id, item.productId._id, item.quantity - 1)}
-                                                        disabled={item.quantity <= 1}
-                                                    >-</button>
-                                                    <input
-                                                        type="number"
-                                                        value={item.quantity}
-                                                        min="1"
-                                                        onChange={(e) => handleQuantityChange(item._id, item.productId._id, Number(e.target.value))}
-                                                    />
-                                                    <button
-                                                        onClick={() => handleQuantityChange(item._id, item.productId._id, item.quantity + 1)}
-                                                    >+</button>
-                                                </div></TableCell>
-                                            <TableCell align="right">
-                                                <div className='remove-button' onClick={() => handleRemoveItem(item.productId._id)}>
-                                                    <FaTrashAlt></FaTrashAlt>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                }
+                                {cartItems.map((item) => (
+                                    <TableRow key={item._id}>
+                                        <TableCell component="th" scope="row" sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                            <Box sx={{ border: '1px solid #ccc', borderRadius: '12px', padding: '5px 10px' }}>
+                                                <img
+                                                    src={`${item.productId?.images}`}
+                                                    alt={item.productId?.name || 'Product'}
+                                                    className="cart-item-image"
+                                                />
+                                            </Box>
+                                            <p>{item.productId?.name || 'Tên sản phẩm'}</p>
+                                            <p>Size: {item.size || 'Mặc định'}</p>
+                                        </TableCell>
+                                        <TableCell align="center">{item.productId?.price}</TableCell>
+                                        <TableCell align="center">
+                                            <div className="quantity-control">
+                                                <button
+                                                    onClick={() => handleQuantityChange(item._id, item.productId._id, item.size, item.quantity - 1)} // Thêm size vào đây
+                                                    disabled={item.quantity <= 1}
+                                                >-</button>
+                                                <input
+                                                    type="number"
+                                                    value={item.quantity}
+                                                    min="1"
+                                                    onChange={(e) => handleQuantityChange(item._id, item.productId._id, item.size, Number(e.target.value))} // Thêm size vào đây
+                                                />
+                                                <button
+                                                    onClick={() => handleQuantityChange(item._id, item.productId._id, item.size, item.quantity + 1)} // Thêm size vào đây
+                                                >+</button>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <div className='remove-button' onClick={() => handleRemoveItem(item.productId._id, item.size)}>
+                                                <FaTrashAlt />
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
                             </TableBody>
+
                         </Table>
                         <Box sx={{ margin: '20px 0', width: '100%', display: 'flex', justifyContent: 'center' }}>
                             {

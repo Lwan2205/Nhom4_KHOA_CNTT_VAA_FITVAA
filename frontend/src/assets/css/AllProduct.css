@@ -30,8 +30,19 @@
 
 .product-image img {
     width: 100px;
-    height: auto;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-top: 5px;
+    /* Điều chỉnh kích thước ảnh */
+    height: 100px;
+    /* Đảm bảo ảnh có kích thước đều */
+    object-fit: cover;
+    /* Đảm bảo ảnh không bị kéo giãn và vừa với khung */
+}
+
+.product-description {
+    overflow: hidden;
+    white-space: nowrap;
+    /* Ngăn ngắt dòng */
+    text-overflow: ellipsis;
+    /* Thêm dấu ba chấm (...) nếu quá dài */
+    max-width: 200px;
+    /* Giới hạn chiều dài phần mô tả */
 }

@@ -152,7 +152,7 @@ const Order = () => {
                                             <TableCell component="th" scope="row" sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                                 <Box sx={{ border: '1px solid #ccc', borderRadius: '12px', padding: '5px 10px' }}>
                                                     <img
-                                                        src={`http://localhost:8000${item.productId?.images}`}
+                                                        src={`${item.productId?.images}`}
 
 
                                                         alt={item.productId?.name || 'Product'}
@@ -176,7 +176,7 @@ const Order = () => {
                         <FormControl>
                             <InputLabel
                                 htmlFor="address"
-                            > Nhập địa chỉ giao hàng</InputLabel>
+                            > </InputLabel>
                             <TextField
                                 id="address"
                                 label="Nhập địa chỉ giao hàng"
@@ -225,7 +225,7 @@ const Order = () => {
                     </Box>
 
                     <Box sx={{ margin: '20px auto', width: '80%' }}>
-                        <Button sx={{
+                        <Button onClick={handleCompleteOrder} sx={{
                             backgroundColor: '#007bff',
                             color: '#fff',
                             padding: '10px 20px',

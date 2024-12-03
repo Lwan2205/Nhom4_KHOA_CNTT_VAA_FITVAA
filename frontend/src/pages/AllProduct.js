@@ -117,7 +117,7 @@ const ProductList = () => {
                                 <TableCell sx={{ fontWeight: '700' }} align="center">Product Category</TableCell>
                                 <TableCell sx={{ fontWeight: '700' }} align="center">Manufacturer</TableCell>
                                 <TableCell sx={{ fontWeight: '700' }} align="center">Price</TableCell>
-                                <TableCell sx={{ fontWeight: '700' }} align="center">Stock</TableCell>
+                                {/* <TableCell sx={{ fontWeight: '700' }} align="center">Stock</TableCell> */}
                                 <TableCell sx={{ fontWeight: '700' }} align="center">Created Date</TableCell>
                                 <TableCell sx={{ fontWeight: '700' }} align="center">Action</TableCell>
                             </TableRow>
@@ -127,36 +127,29 @@ const ProductList = () => {
                                 products && products.length > 0 && products.map((product, index) => (
                                     <TableRow key={product._id}>
                                         <TableCell align='center'>
-                                            <img src={product.image} />
+                                            <img src={product.images} className="product-image" alt="product" />
                                         </TableCell>
                                         <TableCell align="center">
                                             <p>{product.name}</p>
                                         </TableCell>
                                         <TableCell align="center">
-                                            <p>{product.description}</p>
+                                            <p className="product-description">{product.description}</p>
                                         </TableCell>
                                         <TableCell align="center">
-                                            <p>
-                                                {product.category.name}
-                                            </p>
+                                            <p>{product.category.name}</p>
                                         </TableCell>
                                         <TableCell align="center">
-                                            <p>
-                                                {product.manufacturer.name}
-                                            </p>
+                                            <p>{product.manufacturer.name}</p>
                                         </TableCell>
+
+                                        <TableCell align="center">
+                                            <p>{product.price}</p>
+                                        </TableCell>
+                                        {/* <TableCell align="center">
+                                            <p>{product.stock}</p>
+                                        </TableCell> */}
                                         <TableCell align="center">
                                             <p>{moment(product.createdAt).format('LL')}</p>
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <p>
-                                                {product.price}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <p>
-                                                {product.stock}
-                                            </p>
                                         </TableCell>
                                         <TableCell align="right">
                                             <Box sx={{
@@ -166,8 +159,7 @@ const ProductList = () => {
                                                 alignItems: 'center'
                                             }}>
                                                 <MdModeEdit className='edit-admin_button' onClick={() => handleEditProduct(product)} />
-                                                <MdDelete className='remove-admin_button:hover' onClick={() => handleDeleteProduct(product._id)}>
-                                                </MdDelete>
+                                                <MdDelete className='remove-admin_button' onClick={() => handleDeleteProduct(product._id)} />
                                             </Box>
                                         </TableCell>
                                     </TableRow>

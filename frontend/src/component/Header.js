@@ -104,7 +104,7 @@ const Header = () => {
             </div>
             <div className='header-content' style={{ margin: "0 10%" }}>
                 <div className="header-top">
-                    <a href="#" className="vaccine-center">Trung tâm tiêm chủng Long Châu <span>Xem chi tiết</span></a>
+                    <a href="#" className="vaccine-center"> </a>
                     <div className="contact-info">
                         <a href="#" className="download-app">Tải ứng dụng</a>
                         <a href="tel:18006928" className="phone-number">Tư vấn ngay: 1800 6928</a>
@@ -112,12 +112,14 @@ const Header = () => {
                 </div>
                 <div className="header-bottom">
                     <div className="logo-container">
-                        <img src="https://cms-prod.s3-sgn09.fptcloud.com/smalls/Logo_LC_Default_2e36f42b6b.svg" alt="FPT Retail Logo" className="logo" />
+                        <a href='/'>
+                            <img src="https://smakerclothing.com/upload/hinhanh/logo2020-1824.png" alt="/" className="logo" />
+                        </a>
                     </div>
                     <div className="search-bar">
                         <input
                             type="text"
-                            placeholder="Tìm loại thuốc, tên thuốc..."
+                            placeholder="Tìm sản phẩm..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -158,9 +160,9 @@ const Header = () => {
                     </div>
                 </div>
                 <div className="menu">
-                    <a href="#">Cây thuốc</a>
+                    <a href="/">Trang chủ</a>
                     <div className="dropdown-menu-container">
-                        <a href="#">Thuốc chữa bệnh</a>
+                        <a href="#">Danh mục</a>
                         <div className="dropdown-submenu">
                             {categories.map((category) => (
                                 <a
@@ -173,8 +175,8 @@ const Header = () => {
                             ))}
                         </div>
                     </div>
-                    <a href="#">Dinh dưỡng</a>
-                    <a href="#">Bệnh thường gặp</a>
+                    <a href="/feedback">FeedBack</a>
+                    <a href="discount">Sales</a>
                 </div>
             </div>
         </div>

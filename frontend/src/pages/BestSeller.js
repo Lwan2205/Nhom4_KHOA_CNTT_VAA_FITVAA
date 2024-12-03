@@ -72,7 +72,7 @@ const BestSeller = () => {
             <div className="product-grid">
                 {topProducts && topProducts.length >= 0 && topProducts.map((product) => (
                     <div className="product-card" key={product._id} onClick={() => handleProductClick(product._id)}>
-                        <img src={`http://localhost:8000${product.images}`} alt={product.name} className="product-image" />
+                        <img src={`${product.images}`} alt={product.name} className="product-image" />
                         <h3 className="product-name">{product.name}</h3>
                         <p className="product-price">
                             <span className="current-price">{product.price}đ</span>

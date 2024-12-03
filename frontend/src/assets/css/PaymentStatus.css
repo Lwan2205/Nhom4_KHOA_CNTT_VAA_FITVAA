@@ -1,44 +1,70 @@
 .payment-status-container {
     text-align: center;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-width: 400px;
+    background: #f9f9f9;
+    /* Nền sáng hơn để tạo cảm giác thân thiện */
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    max-width: 450px;
+    /* Kích thước tối đa lớn hơn một chút */
     width: 100%;
+    margin: 50px auto;
+    /* Căn giữa và tạo khoảng cách phía trên */
+    transition: transform 0.3s ease;
+    /* Hiệu ứng khi hover */
+}
+
+.payment-status-container:hover {
+    transform: scale(1.02);
+    /* Phóng to nhẹ khi hover */
 }
 
 .payment-status-heading {
-    font-size: 24px;
-    margin-bottom: 10px;
+    font-size: 28px;
+    /* Kích thước chữ lớn hơn */
+    margin-bottom: 15px;
+    font-weight: bold;
+    /* Đậm chữ để nổi bật hơn */
 }
 
 .payment-status-message {
-    font-size: 16px;
-    color: #333;
+    font-size: 18px;
+    /* Kích thước chữ lớn hơn */
+    color: #555;
+    /* Màu chữ tối hơn một chút */
+    margin-bottom: 20px;
+    /* Khoảng cách dưới */
 }
 
 .payment-status-success {
     color: #4caf50;
+    /* Màu xanh lá cho trạng thái thành công */
 }
 
 .payment-status-failed {
     color: #f44336;
+    /* Màu đỏ cho trạng thái thất bại */
 }
 
 .payment-status-btn {
     display: inline-block;
     margin-top: 20px;
-    padding: 10px 20px;
-    font-size: 16px;
+    padding: 12px 25px;
+    /* Kích thước nút lớn hơn */
+    font-size: 18px;
+    /* Kích thước chữ lớn hơn */
     color: #fff;
-    background-color: #4caf50;
+    background-color: #2196F3;
+    /* Màu xanh dương cho nút */
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
     text-decoration: none;
+    transition: background-color 0.3s ease;
+    /* Hiệu ứng chuyển màu */
 }
 
 .payment-status-btn:hover {
-    background-color: #45a049;
+    background-color: #1976D2;
+    /* Màu tối hơn khi hover */
 }

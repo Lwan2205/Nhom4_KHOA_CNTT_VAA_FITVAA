@@ -5,7 +5,8 @@ import Footer from '../component/Footer';
 import ImageSlider from '../component/Slider';
 import BestSeller from './BestSeller';
 import FavoriteBrands from '../component/FavoriteBrands';
-import FeaturedCategories from '../component/FeaturedCategories';
+// import FeaturedCategories from '../component/FeaturedCategories';
+import DiscountedProducts from './DiscountedProducts';
 
 const Home = () => {
     return (
@@ -13,7 +14,7 @@ const Home = () => {
             <ImageSlider />
             <BestSeller />
             <FavoriteBrands />
-            <FeaturedCategories />
+            <DiscountedProducts />
         </div>
     );
 

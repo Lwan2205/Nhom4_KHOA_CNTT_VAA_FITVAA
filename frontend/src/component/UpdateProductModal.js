@@ -8,7 +8,7 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
     const [formData, setFormData] = useState({
         name: product.name,
         price: product.price,
-        description: product.description?._id,
+        description: product.description,
         category: product.category?._id,
         discount: product.discount?._id,
         manufacturer: product.manufacturer?._id,
@@ -16,6 +16,7 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
         images: '', // Bỏ giá trị URL, sẽ thay bằng file upload
         rating: product.rating,
         isFeatured: product.isFeatured,
+        variants: product.variants || [], // Dữ liệu variants
     });
 
     const [selectedFile, setSelectedFile] = useState(null); // Lưu file ảnh khi người dùng chọn
@@ -37,7 +38,6 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
             setCategories(categories.data);
             setManufacturers(manufacturer.data);
             setDiscounts(discount.data);
-            console.log(discount.data)
         };
         fetchData();
     }, []);
@@ -50,6 +50,17 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
         });
     };
 
+    // Xử lý thay đổi cho variant cụ thể
+    const handleVariantChange = (e, index) => {
+        const { name, value } = e.target;
+        const updatedVariants = [...formData.variants];
+        updatedVariants[index] = {
+            ...updatedVariants[index],
+            [name]: value, // Cập nhật giá trị cho variant
+        };
+        setFormData({ ...formData, variants: updatedVariants });
+    };
+
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]); // Lưu file vào state
     };
@@ -60,10 +71,15 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
 
             // Add các trường khác vào form
             for (const key in formData) {
-                form.append(key, formData[key]);
+                if (key !== 'variants') {  // Chỉ thêm các trường khác, không phải variants
+                    form.append(key, formData[key]);
+                }
             }
 
-            // Thêm ảnh vào form
+            // Thêm variants dưới dạng chuỗi JSON
+            form.append('variants', JSON.stringify(formData.variants));
+
+            // Thêm ảnh vào form nếu có
             if (selectedFile) {
                 form.append('image', selectedFile); // Key 'image' phải trùng với backend
             }
@@ -89,7 +105,8 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
         <div className="modal-overlay">
             <div className="modal-content">
                 <h2 style={{ marginTop: '200px' }}>Update Product</h2>
-                {/* <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Product Name" /> */}
+
+                {/* Product Name */}
                 <FormControl fullWidth>
                     <TextField
                         sx={{ marginBottom: '20px', border: 'none' }}
@@ -99,10 +116,10 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
                         label="Name"
                         value={formData.name}
                         onChange={handleChange}
-                    ></TextField>
+                    />
                 </FormControl>
-                {/* <input type="number" name="price" value={formData.price} onChange={handleChange} placeholder="Price" /> */}
 
+                {/* Price */}
                 <FormControl fullWidth>
                     <TextField
                         sx={{ marginBottom: '20px', border: 'none' }}
@@ -111,34 +128,23 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
                         label="Price"
                         value={formData.price}
                         onChange={handleChange}
-                    ></TextField>
+                    />
                 </FormControl>
 
+                {/* Description */}
                 <FormControl sx={{ marginBottom: '20px', border: 'none' }} fullWidth>
                     <TextareaAutosize
                         sx={{ marginBottom: '20px', border: 'none' }}
-                        type="text"
                         name="description"
-                        label="Description"
-                        placeholder='Description'
+                        placeholder="Description"
                         value={formData.description}
                         onChange={handleChange}
-                    ></TextareaAutosize>
+                    />
                 </FormControl>
 
-                {/* Select danh mục hiện tại */}
-                {/* <div className="field-group">
-                    <label>Current Category:</label>
-                    <select name="category" value={formData.category} onChange={handleChange}>
-                        <option value="">Select Category</option>
-                        {categories.map(cat => (
-                            <option key={cat._id} value={cat._id}>{cat.name}</option>
-                        ))}
-                    </select>
-                </div> */}
-
+                {/* Category */}
                 <FormControl fullWidth sx={{ marginBottom: '20px' }}>
-                    <InputLabel id="demo-simple-select-label">Current Category</InputLabel>
+                    <InputLabel>Current Category</InputLabel>
                     <Select
                         value={formData.category}
                         name="category"
@@ -151,21 +157,12 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
                     </Select>
                 </FormControl>
 
-                {/* Select giảm giá hiện tại */}
-                {/* <div className="field-group">
-                    <label>Current Discount:</label>
-                    <select name="discount" value={formData.discount} onChange={handleChange}>
-                        <option value="">Select Discount</option>
-                        {discounts.map(disc => (
-                            <option key={disc._id} value={disc._id}>{disc.code} - {disc.discountPercent}%</option>
-                        ))}
-                    </select>
-                </div> */}
+                {/* Discount */}
                 <FormControl fullWidth sx={{ marginBottom: '20px' }}>
-                    <InputLabel id="demo-simple-select-label">Current Discount</InputLabel>
+                    <InputLabel>Current Discount</InputLabel>
                     <Select
                         value={formData.discount}
-                        name='discount'
+                        name="discount"
                         label="Current Discount"
                         onChange={handleChange}
                     >
@@ -175,9 +172,9 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
                     </Select>
                 </FormControl>
 
-                {/* Select nhà sản xuất hiện tại */}
+                {/* Manufacturer */}
                 <FormControl fullWidth sx={{ marginBottom: '20px' }}>
-                    <InputLabel id="demo-simple-select-label">Current Manufacturer</InputLabel>
+                    <InputLabel>Current Manufacturer</InputLabel>
                     <Select
                         name="manufacturer"
                         value={formData.manufacturer}
@@ -190,39 +187,83 @@ const UpdateProductModal = ({ product, onClose, onUpdate }) => {
                     </Select>
                 </FormControl>
 
+                {/* Stock */}
                 <FormControl fullWidth>
                     <TextField
-
                         sx={{ marginBottom: '20px', border: 'none' }}
                         type="number"
                         name="stock"
                         label="Stock"
                         value={formData.stock}
                         onChange={handleChange}
-                    ></TextField>
+                    />
                 </FormControl>
 
-                {/* File input cho ảnh */}
+                {/* Variants */}
+                <div>
+                    <h3>Variants</h3>
+                    {formData.variants.map((variant, index) => (
+                        <div key={index}>
+                            <FormControl fullWidth sx={{ marginBottom: '10px' }}>
+                                <TextField
+                                    label="Size"
+                                    name="size"
+                                    value={variant.size}
+                                    onChange={(e) => handleVariantChange(e, index)}
+                                />
+                            </FormControl>
+                            <FormControl fullWidth sx={{ marginBottom: '10px' }}>
+                                <TextField
+                                    label="Stock"
+                                    name="stock"
+                                    value={variant.stock}
+                                    onChange={(e) => handleVariantChange(e, index)}
+                                />
+                            </FormControl>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Upload Image */}
                 <div className="field-group">
                     <label>Upload Image:</label>
                     <input
                         type="file"
                         name="image"
-                        onChange={handleFileChange} // Xử lý file
+                        onChange={handleFileChange}
                     />
                 </div>
 
-                <input type="number" name="rating" value={formData.rating} onChange={handleChange} placeholder="Rating" />
+                {/* Rating */}
+                <FormControl fullWidth>
+                    <TextField
+                        sx={{ marginBottom: '20px', border: 'none' }}
+                        type="number"
+                        name="rating"
+                        label="Rating"
+                        value={formData.rating}
+                        onChange={handleChange}
+                    />
+                </FormControl>
+
+                {/* Featured */}
                 <label>
-                    <input type="checkbox" name="isFeatured" checked={formData.isFeatured} onChange={handleChange} />
+                    <input
+                        type="checkbox"
+                        name="isFeatured"
+                        checked={formData.isFeatured}
+                        onChange={handleChange}
+                    />
                     Featured
                 </label>
+
+                {/* Actions */}
                 <div className="modal-actions">
                     <button onClick={handleUpdateProduct}>Update</button>
                     <button onClick={onClose}>Cancel</button>
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 

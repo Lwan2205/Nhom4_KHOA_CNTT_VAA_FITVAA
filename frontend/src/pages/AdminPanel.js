@@ -36,7 +36,7 @@ const AdminPanel = () => {
                 <div>
                     <nav className='admin-nav'>
                         <div className='admin-nav_li'>
-                            <Link to={"all-users"}>Quản lí ng dùng</Link>
+                            <Link to={"all-users"}>Quản lí người dùng</Link>
                         </div>
                         <div className='admin-nav_li'>
                             <Link to={'all-categories'}>Quản lí danh mục</Link>

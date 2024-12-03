@@ -99,7 +99,33 @@ const paymentReturn = async (req, res) => {
                     const cart = await Cart.findOne({ userId });
 
                     if (cart) {
-                        cart.products = []; // Xóa các sản phẩm trong giỏ hàng
+                        // Cập nhật số lượng kho cho sản phẩm
+                        const updateStock = cart.products.map(async (item) => {
+                            const productId = item.productId._id;
+                            const variants = item.productId.variants;
+
+                            // Kiểm tra xem variants có phải là mảng và không rỗng không
+                            if (Array.isArray(variants) && variants.length > 0) {
+                                const productVariant = variants.find(variant => variant.size === item.size);
+
+                                if (productVariant) {
+                                    // Giảm số lượng tồn kho cho sản phẩm này
+                                    productVariant.stock -= item.quantity;
+                                    await Product.findByIdAndUpdate(productId, {
+                                        $set: { 'variants.$[elem].stock': productVariant.stock },
+                                    }, {
+                                        arrayFilters: [{ 'elem.size': item.size }],
+                                        new: true,
+                                    });
+                                }
+                            }
+                        });
+
+                        // Chạy tất cả các cập nhật kho song song
+                        await Promise.all(updateStock);
+
+                        // Xóa các sản phẩm trong giỏ hàng sau khi thanh toán thành công
+                        cart.products = [];
                         await cart.save();
                     }
                 }
@@ -117,6 +143,7 @@ const paymentReturn = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 
 

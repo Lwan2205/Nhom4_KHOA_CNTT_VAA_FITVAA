@@ -10,7 +10,7 @@ const { protect } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 // Thêm đánh giá mới
-router.post('/add', protect, addReview);
+router.post('/add', addReview);
 
 // Lấy tất cả đánh giá của một sản phẩm
 router.get('/:productId', getProductReviews);

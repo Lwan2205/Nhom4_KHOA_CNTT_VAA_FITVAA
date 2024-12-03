@@ -12,7 +12,8 @@
     Đảm bảo header cố định đúng vị trí */
 }
 
-.header a,li {
+.header a,
+li {
     text-decoration: none;
 }
 

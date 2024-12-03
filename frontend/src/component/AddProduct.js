@@ -15,36 +15,40 @@ const AddProduct = () => {
         stock: 0,
         rating: 0,
         isFeatured: false,
-        ingredients: '',
-        usage: ''
+        variants: [],  // To store size/stock combinations
     });
     const [imageFile, setImageFile] = useState(null);
     const [categories, setCategories] = useState([]);
     const [manufacturers, setManufacturers] = useState([]);
     const [discounts, setDiscounts] = useState([]);
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchData = async () => {
-            const categoryResponse = await fetch(SummaryApi.category_list.url, {
-                method: 'get',
-                credentials: 'include'
-            });
-            const manufacturerResponse = await fetch(SummaryApi.all_manufacturers.url, {
-                method: 'get',
-                credentials: 'include'
-            });
-            const discountResponse = await fetch(SummaryApi.all_discount.url, {
-                method: 'get',
-                credentials: 'include'
-            });
-            const categories = await categoryResponse.json();
-            const manufacturer = await manufacturerResponse.json();
-            const discount = await discountResponse.json();
+            try {
+                const categoryResponse = await fetch(SummaryApi.category_list.url, {
+                    method: 'get',
+                    credentials: 'include',
+                });
+                const manufacturerResponse = await fetch(SummaryApi.all_manufacturers.url, {
+                    method: 'get',
+                    credentials: 'include',
+                });
+                const discountResponse = await fetch(SummaryApi.all_discount.url, {
+                    method: 'get',
+                    credentials: 'include',
+                });
 
-            setCategories(categories.data);
-            setManufacturers(manufacturer.data);
-            setDiscounts(discount.data);
+                const categories = await categoryResponse.json();
+                const manufacturer = await manufacturerResponse.json();
+                const discount = await discountResponse.json();
+
+                setCategories(categories.data);
+                setManufacturers(manufacturer.data);
+                setDiscounts(discount.data);
+            } catch (error) {
+                toast.error("Failed to load data");
+            }
         };
         fetchData();
     }, []);
@@ -58,7 +62,32 @@ const AddProduct = () => {
         setImageFile(e.target.files[0]);
     };
 
+    const handleVariantChange = (e, index, type) => {
+        const updatedVariants = [...formData.variants];
+        updatedVariants[index] = {
+            ...updatedVariants[index],
+            [type]: e.target.value,
+        };
+        setFormData({ ...formData, variants: updatedVariants });
+    };
+
+    const handleAddVariant = () => {
+        setFormData({ ...formData, variants: [...formData.variants, { size: '', stock: 0 }] });
+    };
+
+    const handleRemoveVariant = (index) => {
+        const updatedVariants = formData.variants.filter((_, i) => i !== index);
+        setFormData({ ...formData, variants: updatedVariants });
+    };
+
+    // Khi thêm biến thể, đảm bảo stock là số
     const handleAddProduct = async () => {
+        // Đảm bảo variants có stock là số
+        const validVariants = formData.variants.map(variant => ({
+            ...variant,
+            stock: Number(variant.stock),  // Chuyển stock thành số
+        }));
+
         const productData = new FormData();
         productData.append('name', formData.name);
         productData.append('price', formData.price);
@@ -66,11 +95,10 @@ const AddProduct = () => {
         productData.append('category', formData.category);
         productData.append('discount', formData.discount);
         productData.append('manufacturer', formData.manufacturer);
-        productData.append('stock', formData.stock); // Thêm stock vào FormData
         productData.append('rating', formData.rating);
         productData.append('isFeatured', formData.isFeatured);
-        productData.append('ingredients', formData.ingredients);
-        productData.append('usage', formData.usage);
+        productData.append('variants', JSON.stringify(validVariants));  // Đảm bảo variants là mảng hợp lệ
+
         if (imageFile) {
             productData.append('image', imageFile);
         }
@@ -79,23 +107,30 @@ const AddProduct = () => {
             const response = await fetch(SummaryApi.add_product.url, {
                 method: 'POST',
                 credentials: 'include',
-                body: productData
+                body: productData,
             });
+
             if (response.ok) {
-                toast.success("Product added successfully");
+                toast.success("Thêm sản phẩm thành công");
                 setFormData({
-                    name: '', price: '', description: '', category: '',
-                    discount: '', manufacturer: '', stock: 0, rating: 0, isFeatured: false,
-                    ingredients: '', usage: ''
+                    name: '',
+                    price: '',
+                    description: '',
+                    category: '',
+                    discount: '',
+                    manufacturer: '',
+                    stock: 0,
+                    rating: 0,
+                    isFeatured: false,
+                    variants: [],
                 });
                 setImageFile(null);
-                navigate('/admin-panel/all-products')
-
+                navigate('/admin-panel/all-products');
             } else {
-                toast.error("Error adding product.");
+                toast.error("Lỗi khi thêm sản phẩm.");
             }
         } catch (error) {
-            toast.error("Error adding product.");
+            toast.error("Lỗi khi thêm sản phẩm.");
         }
     };
 
@@ -118,17 +153,31 @@ const AddProduct = () => {
                 {manufacturers.map(man => <option key={man._id} value={man._id}>{man.name}</option>)}
             </select>
 
+            {/* Variants Section */}
+            <h3>Product Variants (Size)</h3>
+            {formData.variants.map((variant, index) => (
+                <div key={index} className="variant-row">
+                    <select value={variant.size} onChange={(e) => handleVariantChange(e, index, 'size')}>
+                        <option value="">Select Size</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                    </select>
+                    <input
+                        type="number"
+                        value={variant.stock}
+                        onChange={(e) => handleVariantChange(e, index, 'stock')}
+                        placeholder="Stock Quantity"
+                    />
+                    <button type="button" onClick={() => handleRemoveVariant(index)}>Remove</button>
+                </div>
+            ))}
+            <button type="button" onClick={handleAddVariant}>Add Variant</button>
+
             <input type="file" name="image" onChange={handleImageChange} />
 
-            {/* Ô nhập liệu cho ingredients */}
-            <textarea name="ingredients" value={formData.ingredients} onChange={handleChange} placeholder="Ingredients" />
-
-            {/* Ô nhập liệu cho usage */}
-            <textarea name="usage" value={formData.usage} onChange={handleChange} placeholder="Usage Instructions" />
-
-            {/* Ô nhập liệu cho stock */}
-            <input type="number" name="stock" value={formData.stock} onChange={handleChange} placeholder="Stock Quantity" />
-
+            {/* Submit Button */}
             <button onClick={handleAddProduct}>Add Product</button>
         </div>
     );

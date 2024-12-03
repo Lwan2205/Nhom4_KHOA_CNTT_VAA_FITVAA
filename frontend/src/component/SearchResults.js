@@ -23,7 +23,7 @@ const SearchResults = () => {
                             onClick={() => handleProductClick(product._id)}
                         >
                             <img
-                                src={`http://localhost:8000${product.images}`}
+                                src={`${product.images}`}
                                 alt={product.description}
                                 className="product-image"
                             />

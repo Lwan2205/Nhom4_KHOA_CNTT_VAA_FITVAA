@@ -5,21 +5,33 @@ const Manufacturer = require('../../backend/model/manufacturer');
 const mongoose = require('mongoose');
 
 // Lấy tất cả sản phẩm
+// Lấy tất cả sản phẩm
 const getAllProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
-    const limit = parseInt(req.query.limit) || 1; // Số sản phẩm mỗi trang (mặc định là 6)
+    const limit = parseInt(req.query.limit) || 6; // Số sản phẩm mỗi trang (mặc định là 6)
     try {
         const skip = (page - 1) * limit;
         const products = await Product.find({})
             .skip(skip)
             .limit(limit)
-            .populate('category', 'name')  // Liên kết với Category và chỉ lấy name
-            .populate('discount', 'name discountPercent')  // Liên kết với Discount
-            .populate('manufacturer', 'name');  // Liên kết với Manufacturer
-        const totalProducts = await Product.countDocuments()
-        const totalPages = Math.ceil(totalProducts / limit)
+            .populate('category', 'name')
+            .populate('discount', 'name discountPercent')
+            .populate('manufacturer', 'name');
+
+        const totalProducts = await Product.countDocuments();
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        // Cập nhật trả về thông tin về variants (size và stock)
+        const productsWithVariants = products.map(product => ({
+            ...product.toObject(),
+            variants: product.variants.map(variant => ({
+                size: variant.size,
+                stock: variant.stock
+            }))
+        }));
+
         res.status(200).json({
-            products: products,
+            products: productsWithVariants,
             success: true,
             currentPage: page,
             totalPages: totalPages
@@ -30,17 +42,32 @@ const getAllProducts = async (req, res) => {
     }
 };
 
+
+
+
+// Lấy chi tiết sản phẩm theo ID
 // Lấy chi tiết sản phẩm theo ID
 const getProductById = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id)
             .populate('category', 'name')
-            .populate('discount', 'code ')
+            .populate('discount', 'code discountPercent')
             .populate('manufacturer', 'name country');
+
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
         }
-        res.status(200).json({ data: product, success: true });
+
+        // Trả về thêm thông tin variants (size và stock)
+        const productWithVariants = {
+            ...product.toObject(),
+            variants: product.variants.map(variant => ({
+                size: variant.size,
+                stock: variant.stock
+            }))
+        };
+
+        res.status(200).json({ data: productWithVariants, success: true });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -75,6 +102,7 @@ const getProductsByCategoryId = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
 const getProductsByBrandId = async (req, res) => {
     try {
         const brandId = req.params.brandId;
@@ -104,20 +132,31 @@ const getProductsByBrandId = async (req, res) => {
     }
 };
 
-// Thêm sản phẩm mới
 const addProduct = async (req, res) => {
-    const {
-        name, category, description, price, discount,
-        stock, ingredients, usage, origin, manufacturer, rating, isFeatured
+    let {
+        name, category, description, price, discount, stock, manufacturer, rating, isFeatured, variants
     } = req.body;
 
-    // Kiểm tra bắt buộc
+    // Kiểm tra và parse variants nếu nó là chuỗi JSON
+    if (typeof variants === 'string') {
+        try {
+            variants = JSON.parse(variants);
+        } catch (error) {
+            return res.status(400).json({ message: 'Invalid variants data' });
+        }
+    }
+
+    // Đảm bảo variants là mảng hợp lệ và stock là số
+    const validVariants = variants.map(variant => ({
+        ...variant,
+        stock: Number(variant.stock)  // Chuyển stock thành số
+    }));
+
     if (!name || !category || !price) {
         return res.status(400).json({ message: 'Name, category, and price are required' });
     }
 
     try {
-        // Kiểm tra xem category, discount, và manufacturer có tồn tại không
         const foundCategory = await Category.findById(category);
         const foundManufacturer = await Manufacturer.findById(manufacturer);
         if (!foundCategory || !foundManufacturer) {
@@ -131,7 +170,6 @@ const addProduct = async (req, res) => {
             }
         }
 
-        // Tạo sản phẩm mới và lưu đường dẫn ảnh từ Cloudinary (nếu có)
         const product = new Product({
             name,
             category,
@@ -139,13 +177,11 @@ const addProduct = async (req, res) => {
             price,
             discount: discount || null,
             stock: stock || 0,
-            ingredients,
-            usage,
-            origin,
             manufacturer,
-            images: req.file ? req.file.path : '', // Sử dụng URL từ Cloudinary đã lưu trong `req.file.path`
             rating: rating || 0,
             isFeatured: isFeatured || false,
+            variants: validVariants, // Đảm bảo variants là mảng và stock là số
+            images: req.file ? req.file.path : '',
         });
 
         const createdProduct = await product.save();
@@ -157,43 +193,68 @@ const addProduct = async (req, res) => {
 
 
 
+
+
+
+
 // Cập nhật sản phẩm theo ID
 const updateProduct = async (req, res) => {
     const {
         name, category, description, price, discount,
-        stock, ingredients, usage, origin, manufacturer, rating, isFeatured
+        stock, manufacturer, rating, isFeatured, variants
     } = req.body;
 
     try {
+        // Tìm sản phẩm theo ID
         const product = await Product.findById(req.params.id);
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
         }
 
-        // Cập nhật các trường có sẵn
+        // Kiểm tra và parse variants nếu nó là chuỗi JSON
+        let parsedVariants = variants;
+        if (typeof variants === 'string') {
+            try {
+                parsedVariants = JSON.parse(variants);
+            } catch (error) {
+                return res.status(400).json({ message: 'Invalid variants data' });
+            }
+        }
+
+        // Đảm bảo variants là mảng hợp lệ và stock là số
+        const validVariants = parsedVariants.map(variant => ({
+            ...variant,
+            stock: Number(variant.stock)  // Chuyển stock thành số
+        }));
+
+        // Cập nhật các trường khác
         product.name = name || product.name;
         product.category = category || product.category;
         product.description = description || product.description;
         product.price = price || product.price;
         product.discount = discount || product.discount;
         product.stock = stock || product.stock;
-        product.ingredients = ingredients || product.ingredients;
-        product.usage = usage || product.usage;
         product.manufacturer = manufacturer || product.manufacturer;
         product.rating = rating || product.rating;
         product.isFeatured = isFeatured !== undefined ? isFeatured : product.isFeatured;
 
+        // Cập nhật variants mới
+        product.variants = validVariants;
+
         // Cập nhật ảnh nếu có ảnh mới trong request
         if (req.file) {
-            product.images = req.file.path; // Sử dụng URL đầy đủ từ Cloudinary
+            product.images = req.file.path; // Cập nhật URL ảnh nếu có
         }
 
+        // Lưu sản phẩm đã cập nhật
         const updatedProduct = await product.save();
         res.status(200).json({ data: updatedProduct, success: true });
     } catch (error) {
+        console.error(error);  // Ghi lỗi để debug
         res.status(500).json({ message: error.message });
     }
 };
+
 
 
 
@@ -212,6 +273,7 @@ const deleteProduct = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 // Tìm sản phẩm theo tên category
 // Tìm sản phẩm theo tên category
 const getProductsByCategoryName = async (req, res) => {
@@ -258,8 +320,78 @@ const getProductsByCategoryName = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+const getProductDiscount = async (req, res) => {
+    try {
+        // Tìm các sản phẩm có discount không null
+        const products = await Product.find({ discount: { $exists: true, $ne: null } })
+            .populate('discount', 'name discountPercent') // Populate để lấy thông tin từ collection Discount
+            .sort({ totalSold: -1 }) // Sắp xếp theo số lượng bán giảm dần
+            .limit(5); // Giới hạn số lượng sản phẩm trả về (ví dụ: 5)
 
+        // Nếu không có sản phẩm nào, trả về thông báo
+        if (!products || products.length === 0) {
+            return res.status(404).json({ success: false, message: 'No products with discounts found.' });
+        }
 
+        // Trả về danh sách sản phẩm
+        res.status(200).json({ success: true, products });
+
+    } catch (error) {
+        console.error('Error fetching products with discounts:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+const getRelatedProduct = async (req, res) => {
+    const { productId } = req.params;
+
+    try {
+        // Find the product by its ID
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+        }
+
+        // Lấy các sản phẩm liên quan dựa trên cùng category
+        const relatedProducts = await Product.find({
+            _id: { $ne: productId },  // Đảm bảo không lấy chính sản phẩm hiện tại
+            category: product.category // Lọc sản phẩm cùng category
+        }).limit(6); // Giới hạn số lượng sản phẩm liên quan
+
+        res.json({ success: true, data: relatedProducts });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi khi lấy sản phẩm liên quan' });
+    }
+};
+const getAllProductDiscount = async (req, res) => {
+    const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
+    const limit = parseInt(req.query.limit) || 1; // Số sản phẩm mỗi trang (mặc định là 6)
+    try {
+        const skip = (page - 1) * limit;
+        // Tìm các sản phẩm có discount không null
+        const products = await Product.find({ discount: { $exists: true, $ne: null } })
+            .skip(skip)
+            .limit(limit)
+            .populate('discount', 'name discountPercent') // Populate để lấy thông tin từ collection Discount
+
+        const totalProducts = await Product.countDocuments()
+        const totalPages = Math.ceil(totalProducts / limit)
+
+        // Nếu không có sản phẩm nào, trả về thông báo
+        if (!products || products.length === 0) {
+            return res.status(404).json({ success: false, message: 'No products with discounts found.' });
+        }
+
+        // Trả về danh sách sản phẩm
+        res.status(200).json({
+            success: true, products, currentPage: page,
+            totalPages: totalPages
+        });
+
+    } catch (error) {
+        console.error('Error fetching products with discounts:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 module.exports = {
     getAllProducts,
@@ -269,5 +401,8 @@ module.exports = {
     deleteProduct,
     getProductsByCategoryId,
     getProductsByCategoryName,
-    getProductsByBrandId
+    getProductsByBrandId,
+    getProductDiscount,
+    getRelatedProduct,
+    getAllProductDiscount
 };

@@ -26,6 +26,8 @@ import ResetPassword from "../pages/ResetPassword";
 import CategoryList from "../pages/CategoryList";
 import AddCategory from "../component/AddCategory";
 import PaymentStatus from "../component/PaymentStatus";
+import FeedBack from "../pages/FeedBack";
+import ProductListDiscount from "../component/ProductListDiscount";
 
 const router = createBrowserRouter([
     {
@@ -91,6 +93,14 @@ const router = createBrowserRouter([
             {
                 path: 'payment-status',
                 element: <PaymentStatus />
+            },
+            {
+                path: 'feedback',
+                element: <FeedBack />
+            },
+            {
+                path: 'discount',
+                element: < ProductListDiscount />
             },
 
             {

@@ -38,8 +38,8 @@ const SummaryApi = {
         url: `${backendDomain}/api/cart`,
         method: 'get'
     },
-    cart_delete: (productId) => ({
-        url: `${backendDomain}/api/cart/remove/${productId}`,
+    cart_delete: (productId, size) => ({
+        url: `${backendDomain}/api/cart/remove/${productId}/${size}`,
         method: 'DELETE'
     }),
     cart_update: {

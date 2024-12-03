@@ -24,19 +24,19 @@ const ImageSlider = () => {
                         <img src='./banner1.png' alt="Slide 1" />
                     </div>
                     <div>
-                        <img src="slide2.png" alt="Slide 2" />
+                        <img src="./banner2.png" alt="Slide 2" />
                     </div>
                     <div>
-                        <img src="slide3.png" alt="Slide 3" />
+                        <img src="./banner3.png" alt="Slide 3" />
                     </div>
                     <div>
-                        <img src="slide4.png" alt="Slide 4" />
+                        <img src="./banner4.png" alt="Slide 4" />
                     </div>
                 </Slider>
             </div>
 
 
-            <div className="action-buttons">
+            {/* <div className="action-buttons">
                 <div className="action-item">
                     <img src="can-mua-thuoc.png" alt="Cần mua thuốc" />
                     <span>Cần mua thuốc</span>
@@ -53,7 +53,7 @@ const ImageSlider = () => {
                     <img src="don-cua-toi.png" alt="Đơn của tôi" />
                     <span>Đơn của tôi</span>
                 </div>
-                <div className="action-item">
+                <div className="action-item">   
                     <img src="tiem-vac-xin.png" alt="Tiêm Vắc xin" />
                     <span>Tiêm Vắc xin</span>
                 </div>
@@ -61,7 +61,7 @@ const ImageSlider = () => {
                     <img src="kiem-tra-suc-khoe.png" alt="Kiểm tra sức khoẻ" />
                     <span>Kiểm tra sức khoẻ</span>
                 </div>
-            </div>
+            </div> */}
         </>
     );
 }

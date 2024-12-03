@@ -24,7 +24,7 @@ router.get('/count', protect, countAddToCartProduct)
 router.put('/update', protect, updateCart);
 
 // Xóa sản phẩm khỏi giỏ hàng
-router.delete('/remove/:productId', protect, removeFromCart);
+router.delete('/remove/:productId/:size', protect, removeFromCart);
 
 // Xóa toàn bộ giỏ hàng
 router.delete('/clear', protect, clearCart);

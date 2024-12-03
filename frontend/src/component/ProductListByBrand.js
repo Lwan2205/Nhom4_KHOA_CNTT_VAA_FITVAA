@@ -105,7 +105,7 @@ const ProductListByBrand = () => {
                         onClick={() => handleProductClick(product._id)}
                     >
                         <img
-                            src={`http://localhost:8000${product.images}`}
+                            src={`${product.images}`}
                             alt={product.name}
                             className="product-image"
                         />
